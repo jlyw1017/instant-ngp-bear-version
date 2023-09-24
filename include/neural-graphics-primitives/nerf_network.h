@@ -78,10 +78,26 @@ class NerfNetwork : public Network<float, T> {
 public:
 	using json = nlohmann::json;
 
-	NerfNetwork(uint32_t n_pos_dims, uint32_t n_dir_dims, uint32_t n_extra_dims, uint32_t dir_offset, const json& pos_encoding, const json& dir_encoding, const json& density_network, const json& rgb_network) : m_n_pos_dims{n_pos_dims}, m_n_dir_dims{n_dir_dims}, m_dir_offset{dir_offset}, m_n_extra_dims{n_extra_dims} {
-		m_pos_encoding.reset(create_encoding<T>(n_pos_dims, pos_encoding, density_network.contains("otype") && (equals_case_insensitive(density_network["otype"], "FullyFusedMLP") || equals_case_insensitive(density_network["otype"], "MegakernelMLP")) ? 16u : 8u));
+	NerfNetwork(uint32_t n_pos_dims,
+                uint32_t n_dir_dims,
+                uint32_t n_extra_dims,
+                uint32_t dir_offset,
+                const json& pos_encoding,
+                const json& dir_encoding,
+                const json& density_network,
+                const json& rgb_network) :
+                m_n_pos_dims{n_pos_dims},
+                m_n_dir_dims{n_dir_dims},
+                m_dir_offset{dir_offset},
+                m_n_extra_dims{n_extra_dims} {
+		m_pos_encoding.reset(create_encoding<T>(
+                n_pos_dims, pos_encoding, density_network.contains("otype") &&
+                (equals_case_insensitive(density_network["otype"],
+                                         "FullyFusedMLP") ||
+                                         equals_case_insensitive(density_network["otype"], "MegakernelMLP")) ? 16u : 8u));
 		uint32_t rgb_alignment = minimum_alignment(rgb_network);
-		m_dir_encoding.reset(create_encoding<T>(m_n_dir_dims + m_n_extra_dims, dir_encoding, rgb_alignment));
+		m_dir_encoding.reset(
+                create_encoding<T>(m_n_dir_dims + m_n_extra_dims, dir_encoding, rgb_alignment));
 
 		json local_density_network_config = density_network;
 		local_density_network_config["n_input_dims"] = m_pos_encoding->padded_output_width();
@@ -90,7 +106,10 @@ public:
 		}
 		m_density_network.reset(create_network<T>(local_density_network_config));
 
-		m_rgb_network_input_width = next_multiple(m_dir_encoding->padded_output_width() + m_density_network->padded_output_width(), rgb_alignment);
+		m_rgb_network_input_width = next_multiple(
+                m_dir_encoding->padded_output_width() +
+                m_density_network->padded_output_width(),
+                rgb_alignment);
 
 		json local_rgb_network_config = rgb_network;
 		local_rgb_network_config["n_input_dims"] = m_rgb_network_input_width;
@@ -102,7 +121,10 @@ public:
 
 	virtual ~NerfNetwork() { }
 
-	void inference_mixed_precision_impl(cudaStream_t stream, const GPUMatrixDynamic<float>& input, GPUMatrixDynamic<T>& output, bool use_inference_params = true) override {
+	void inference_mixed_precision_impl(
+            cudaStream_t stream, const GPUMatrixDynamic<float>& input,
+            GPUMatrixDynamic<T>& output, bool use_inference_params = true
+                    ) override {
 		uint32_t batch_size = input.n();
 		GPUMatrixDynamic<T> density_network_input{m_pos_encoding->padded_output_width(), batch_size, stream, m_pos_encoding->preferred_output_layout()};
 		GPUMatrixDynamic<T> rgb_network_input{m_rgb_network_input_width, batch_size, stream, m_dir_encoding->preferred_output_layout()};

@@ -38,7 +38,12 @@ using namespace std::literals;
 
 namespace ngp {
 
-__global__ void convert_rgba32(const uint64_t num_pixels, const uint8_t* __restrict__ pixels, uint8_t* __restrict__ out, bool white_2_transparent = false, bool black_2_transparent = false, uint32_t mask_color = 0) {
+__global__ void convert_rgba32(
+        const uint64_t num_pixels,
+        const uint8_t* __restrict__ pixels,
+        uint8_t* __restrict__ out,
+        bool white_2_transparent = false,
+        bool black_2_transparent = false, uint32_t mask_color = 0) {
 	const uint64_t i = threadIdx.x + blockIdx.x * blockDim.x;
 	if (i >= num_pixels) return;
 

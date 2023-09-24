@@ -56,7 +56,13 @@ Testbed::NetworkDims Testbed::network_dims_nerf() const {
 	return dims;
 }
 
-__global__ void extract_srgb_with_activation(const uint32_t n_elements,	const uint32_t rgb_stride, const float* __restrict__ rgbd, float* __restrict__ rgb, ENerfActivation rgb_activation, bool from_linear) {
+__global__ void extract_srgb_with_activation(
+        const uint32_t n_elements,
+        const uint32_t rgb_stride,
+        const float* __restrict__ rgbd,
+        float* __restrict__ rgb,
+        ENerfActivation rgb_activation,
+        bool from_linear) {
 	const uint32_t i = threadIdx.x + blockIdx.x * blockDim.x;
 	if (i >= n_elements) return;
 
@@ -1814,7 +1820,10 @@ void Testbed::Nerf::Training::update_extra_dims() {
 		}
 	}
 
-	CUDA_CHECK_THROW(cudaMemcpyAsync(extra_dims_gpu.data(), extra_dims_cpu.data(), extra_dims_opt.size() * n_extra_dims * sizeof(float), cudaMemcpyHostToDevice));
+	CUDA_CHECK_THROW(cudaMemcpyAsync(
+            extra_dims_gpu.data(), extra_dims_cpu.data(),
+            extra_dims_opt.size() * n_extra_dims * sizeof(float),
+            cudaMemcpyHostToDevice));
 }
 
 void Testbed::render_nerf(
@@ -1836,16 +1845,20 @@ void Testbed::render_nerf(
 		plane_z = -plane_z;
 	}
 
-	ERenderMode render_mode = visualized_dimension > -1 ? ERenderMode::EncodingVis : m_render_mode;
+	ERenderMode render_mode = visualized_dimension > -1 ?
+            ERenderMode::EncodingVis : m_render_mode;
 
 	const float* extra_dims_gpu = m_nerf.get_rendering_extra_dims(stream);
 
 	NerfTracer tracer;
 
-	// Our motion vector code can't undo grid distortions -- so don't render grid distortion if DLSS is enabled.
-	// (Unless we're in distortion visualization mode, in which case the distortion grid is fine to visualize.)
+	// Our motion vector code can't undo grid distortions -- so don't render
+    // grid distortion if DLSS is enabled.
+	// (Unless we're in distortion visualization mode, in which case the
+    // distortion grid is fine to visualize.)
 	auto grid_distortion =
-		m_nerf.render_with_lens_distortion && (!m_dlss || m_render_mode == ERenderMode::Distortion) ?
+		m_nerf.render_with_lens_distortion && (
+                !m_dlss || m_render_mode == ERenderMode::Distortion) ?
 		m_distortion.inference_view() :
 		Buffer2DView<const vec2>{};
 
